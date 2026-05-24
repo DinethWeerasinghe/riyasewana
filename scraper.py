@@ -161,7 +161,10 @@ async def scrape_riyasewana_task(search_params: dict, progress_q: _queue.Queue) 
     emit('navigating', 'Opening browser and navigating to Riyasewana...')
 
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
+        browser = await p.chromium.launch(
+            headless=True,
+            args=['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+        )
         try:
             context = await browser.new_context(
                 viewport={'width': 1280, 'height': 800},

@@ -1,0 +1,28 @@
+# Ignore version control systems
+.git
+.gitignore
+
+# Ignore Python cache and environment files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+
+# Ignore local system/IDE files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
