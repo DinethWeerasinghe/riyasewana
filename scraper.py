@@ -93,7 +93,6 @@ async def extract_car_details(page):
     cars_data = []
 
     await close_popup_ad(page)
-    await page.wait_for_timeout(2000)
 
     car_items = await page.query_selector_all('li.v-card')
     if not car_items:
@@ -172,8 +171,25 @@ async def scrape_riyasewana_task(search_params: dict, progress_q: _queue.Queue) 
             )
             page = await context.new_page()
 
-            await page.goto('https://riyasewana.com/', wait_until='networkidle')
-            await page.wait_for_timeout(3000)
+            # Extreme performance boost: intercept network requests to block ads, tracking scripts, and heavy media
+            async def intercept_route(route):
+                url = route.request.url.lower()
+                resource_type = route.request.resource_type
+                if resource_type in ['image', 'font', 'media']:
+                    await route.abort()
+                elif any(domain in url for domain in [
+                    'googleads', 'doubleclick', 'analytics', 'googlesyndication',
+                    'facebook', 'connect.facebook', 'adnxs', 'smartadserver',
+                    'adsystem', 'popup', 'banner', 'adsbygoogle', 'quantserve',
+                    'scorecardresearch', 'amazon-adsystem'
+                ]):
+                    await route.abort()
+                else:
+                    await route.continue_()
+
+            await page.route('**/*', intercept_route)
+
+            await page.goto('https://riyasewana.com/', wait_until='domcontentloaded')
             await close_popup_ad(page)
 
             emit('filtering', 'Filling search filters and submitting...')
@@ -194,25 +210,21 @@ async def scrape_riyasewana_task(search_params: dict, progress_q: _queue.Queue) 
                 value = search_params.get(param)
                 if value:
                     await page.select_option(selector, value)
-                    await page.wait_for_timeout(400)
 
             if search_params.get('model'):
                 model_input = await page.query_selector('input[name="model"]')
                 if model_input:
                     await model_input.fill(search_params['model'])
-                    await page.wait_for_timeout(400)
 
             if search_params.get('price_min'):
                 el = await page.query_selector('input[name="pricemmin"]')
                 if el:
                     await el.fill(str(search_params['price_min']))
-                    await page.wait_for_timeout(400)
 
             if search_params.get('price_max'):
                 el = await page.query_selector('input[name="pricemmax"]')
                 if el:
                     await el.fill(str(search_params['price_max']))
-                    await page.wait_for_timeout(400)
 
             # Submit search
             search_button = await page.query_selector(
@@ -221,7 +233,7 @@ async def scrape_riyasewana_task(search_params: dict, progress_q: _queue.Queue) 
             if not search_button:
                 raise Exception("Could not find search button on the page")
             await search_button.click()
-            await page.wait_for_timeout(5000)
+            await page.wait_for_selector('li.v-card, .v-card', timeout=15000)
 
             all_cars = []
             page_number = 1
@@ -256,7 +268,7 @@ async def scrape_riyasewana_task(search_params: dict, progress_q: _queue.Queue) 
                     next_url = 'https://riyasewana.com/' + href_clean.lstrip('/')
                 print(f"[>] Navigating to page {page_number + 1}: {next_url}")
                 await page.goto(next_url, wait_until='domcontentloaded')
-                await page.wait_for_timeout(3000)
+                await page.wait_for_selector('li.v-card, .v-card', timeout=15000)
                 page_number += 1
 
                 if page_number > 50:
