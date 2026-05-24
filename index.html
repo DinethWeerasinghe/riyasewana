@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Price Analyzer | Sri Lanka</title>
+    <meta name="description"
+        content="Scrape and analyze car pricing data from Riyasewana, Sri Lanka's largest vehicle marketplace.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --surface2: #21262d;
+            --border: #30363d;
+            --accent: #7c5cfc;
+            --accent2: #a78bfa;
+            --accent-glow: rgba(124, 92, 252, 0.22);
+            --success: #3fb950;
+            --danger: #f85149;
+            --text: #e6edf3;
+            --muted: #8b949e;
+            --radius: 14px;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ── Hero ─────────────────────────────────────────────── */
+        .hero {
+            background: linear-gradient(135deg, #13002e 0%, #0d1117 55%);
+            border-bottom: 1px solid var(--border);
+            padding: 36px 48px 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -80px;
+            right: -80px;
+            width: 340px;
+            height: 340px;
+            background: radial-gradient(circle, rgba(124, 92, 252, 0.18) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(124, 92, 252, 0.15);
+            border: 1px solid rgba(124, 92, 252, 0.35);
+            color: var(--accent2);
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            padding: 4px 12px;
+            border-radius: 99px;
+            margin-bottom: 14px;
+        }
+
+        .hero h1 {
+            font-size: clamp(1.8rem, 4vw, 2.6rem);
+            font-weight: 800;
+            background: linear-gradient(90deg, #fff 40%, var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+            margin-bottom: 10px;
+        }
+
+        .hero p {
+            color: var(--muted);
+            font-size: .95rem;
+            max-width: 520px;
+        }
+
+        /* ── Layout ───────────────────────────────────────────── */
+        .main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 36px 48px 60px;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px 32px;
+            margin-bottom: 28px;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 22px;
+            flex-wrap: wrap;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ── Form ─────────────────────────────────────────────── */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 18px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: .72rem;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .05em;
+        }
+
+        .form-group select,
+        .form-group input {
+            padding: 10px 14px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: .88rem;
+            transition: border-color .2s, box-shadow .2s;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .form-group select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238b949e' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 13px center;
+            padding-right: 36px;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .form-group input::placeholder {
+            color: #4a5568;
+        }
+
+        .form-row-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        /* ── Submit button ────────────────────────────────────── */
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--accent), #5430cc);
+            color: #fff;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: opacity .2s, transform .15s, box-shadow .2s;
+            box-shadow: 0 4px 18px var(--accent-glow);
+            margin-top: 28px;
+        }
+
+        .btn-submit:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px var(--accent-glow);
+        }
+
+        .btn-submit:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ── Loading / steps ──────────────────────────────────── */
+        #loadingSection {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+            padding: 48px;
+            text-align: center;
+        }
+
+        #loadingSection.show {
+            display: flex;
+        }
+
+        .spinner-ring {
+            width: 52px;
+            height: 52px;
+            border: 3px solid var(--surface2);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin .85s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+        }
+
+        .steps {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 4px;
+        }
+
+        .step {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: .85rem;
+            color: var(--muted);
+            transition: border-color .3s, color .3s, background .3s;
+            width: 420px;
+            max-width: 90vw;
+            text-align: left;
+        }
+
+        .step.active {
+            border-color: var(--accent);
+            color: var(--text);
+            background: rgba(124, 92, 252, 0.08);
+        }
+
+        .step.done {
+            border-color: var(--success);
+            color: var(--success);
+            background: rgba(63, 185, 80, 0.06);
+        }
+
+        .step-icon {
+            font-size: 1rem;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .step-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .step-label {
+            font-weight: 600;
+        }
+
+        .step-detail {
+            font-size: .75rem;
+            color: var(--muted);
+            min-height: 1em;
+            transition: color .2s;
+        }
+
+        .step.active .step-detail {
+            color: var(--accent2);
+        }
+
+        .step.done .step-detail {
+            color: var(--success);
+            opacity: .8;
+        }
+
+        /* ── Alert ────────────────────────────────────────────── */
+        .alert {
+            display: none;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 18px;
+            border-radius: 10px;
+            font-size: .87rem;
+            line-height: 1.5;
+            margin-bottom: 24px;
+        }
+
+        .alert.show {
+            display: flex;
+        }
+
+        .alert-error {
+            background: #200d0c;
+            border: 1px solid #6d2c2a;
+            color: #ff7b72;
+        }
+
+        /* ── Results ──────────────────────────────────────────── */
+        #resultsSection {
+            display: none;
+        }
+
+        #resultsSection.show {
+            display: block;
+        }
+
+        .result-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .result-headline-sub {
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .07em;
+            color: var(--muted);
+            margin-bottom: 4px;
+        }
+
+        .result-headline {
+            font-size: 1.15rem;
+            font-weight: 800;
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* ── Stat cards ───────────────────────────────────────── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 14px;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 18px 16px;
+        }
+
+        .stat-label {
+            font-size: .68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--accent2);
+            line-height: 1.1;
+        }
+
+        /* ── Charts ───────────────────────────────────────────── */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+
+        .chart-card {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .chart-label {
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .07em;
+            color: var(--muted);
+            margin-bottom: 14px;
+        }
+
+        .chart-card canvas {
+            max-height: 240px;
+        }
+
+        /* ── Table ────────────────────────────────────────────── */
+        .table-scroll {
+            overflow-x: auto;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .85rem;
+        }
+
+        thead th {
+            padding: 11px 16px;
+            background: var(--surface2);
+            text-align: left;
+            font-size: .7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .07em;
+            color: var(--muted);
+            white-space: nowrap;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background .12s;
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: rgba(124, 92, 252, .05);
+        }
+
+        tbody td {
+            padding: 10px 16px;
+        }
+
+        .num {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .year-cell {
+            font-weight: 700;
+            color: var(--accent2);
+        }
+
+        /* ── Buttons ──────────────────────────────────────────── */
+        .btn-download {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 22px;
+            background: linear-gradient(135deg, #1a7f37, #2ea043);
+            color: #fff;
+            font-family: inherit;
+            font-size: .88rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform .15s, box-shadow .15s;
+            text-decoration: none;
+            box-shadow: 0 3px 12px rgba(46, 160, 67, .3);
+        }
+
+        .btn-download:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(46, 160, 67, .4);
+        }
+
+        .btn-ghost {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 18px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            font-family: inherit;
+            font-size: .85rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: border-color .2s, color .2s;
+        }
+
+        .btn-ghost:hover {
+            border-color: var(--accent);
+            color: var(--accent2);
+        }
+
+        /* ── Responsive ───────────────────────────────────────── */
+        @media (max-width: 720px) {
+            .hero {
+                padding: 24px 20px 20px;
+            }
+
+            .main {
+                padding: 24px 20px 48px;
+            }
+
+            .form-row-2 {
+                grid-template-columns: 1fr;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="hero">
+        <div class="hero-inner">
+            <div class="hero-badge">🇱🇰 Sri Lanka · Riyasewana</div>
+            <h1>Vehicle Price Analyzer</h1>
+            <p>Set your filters — we'll scrape the listings, analyse price trends by year, and show the results
+                instantly.</p>
+        </div>
+    </header>
+
+    <div class="main">
+
+        <!-- Error alert -->
+        <div class="alert alert-error" id="alertBox" role="alert">
+            <span>❌</span><span id="alertMsg"></span>
+        </div>
+
+        <!-- ── Search form ──────────────────────────────────────── -->
+        <div class="card" id="formCard">
+            <div class="card-title">🔍 Search Filters</div>
+            <form id="scraperForm" autocomplete="off">
+                <div class="form-grid">
+
+                    <div class="form-group">
+                        <label>Vehicle Make / Brand</label>
+                        <select name="make" id="make">
+                            <option value="">Any Make</option>
+                            <optgroup label="Most Popular">
+                                <option value="Toyota">Toyota</option>
+                                <option value="Suzuki">Suzuki</option>
+                                <option value="Honda">Honda</option>
+                                <option value="Nissan">Nissan</option>
+                                <option value="Mitsubishi">Mitsubishi</option>
+                                <option value="Tata">Tata</option>
+                                <option value="Bajaj">Bajaj</option>
+                                <option value="TVS">TVS</option>
+                                <option value="Isuzu">Isuzu</option>
+                                <option value="Mahindra">Mahindra</option>
+                                <option value="Mazda">Mazda</option>
+                                <option value="Hyundai">Hyundai</option>
+                                <option value="Kia">Kia</option>
+                                <option value="Ford">Ford</option>
+                                <option value="Mercedes-Benz">Mercedes-Benz</option>
+                                <option value="BMW">BMW</option>
+                            </optgroup>
+                            <optgroup label="All Makes">
+                                <option value="Acura">Acura</option>
+                                <option value="Audi">Audi</option>
+                                <option value="BYD">BYD</option>
+                                <option value="Chevrolet">Chevrolet</option>
+                                <option value="Citroen">Citroen</option>
+                                <option value="Daewoo">Daewoo</option>
+                                <option value="Daihatsu">Daihatsu</option>
+                                <option value="Datsun">Datsun</option>
+                                <option value="Ferrari">Ferrari</option>
+                                <option value="Fiat">Fiat</option>
+                                <option value="Jaguar">Jaguar</option>
+                                <option value="Jeep">Jeep</option>
+                                <option value="Lamborghini">Lamborghini</option>
+                                <option value="Land-Rover">Land-Rover</option>
+                                <option value="Lexus">Lexus</option>
+                                <option value="Maserati">Maserati</option>
+                                <option value="MG">MG</option>
+                                <option value="Micro">Micro</option>
+                                <option value="Mini">Mini</option>
+                                <option value="Opel">Opel</option>
+                                <option value="Perodua">Perodua</option>
+                                <option value="Peugeot">Peugeot</option>
+                                <option value="Porsche">Porsche</option>
+                                <option value="Proton">Proton</option>
+                                <option value="Renault">Renault</option>
+                                <option value="Skoda">Skoda</option>
+                                <option value="Subaru">Subaru</option>
+                                <option value="Tesla">Tesla</option>
+                                <option value="Volkswagen">Volkswagen</option>
+                                <option value="Volvo">Volvo</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Model Name</label>
+                        <input type="text" name="model" id="model" placeholder="e.g. Corolla, Wagon R, Civic">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Vehicle Type</label>
+                        <select name="vtype" id="vtype">
+                            <option value="">Any Type</option>
+                            <option value="cars">Car</option>
+                            <option value="vans">Van</option>
+                            <option value="suvs">SUV / Jeep</option>
+                            <option value="motorcycles">Motorcycle</option>
+                            <option value="crew-cabs">Crew Cab</option>
+                            <option value="pickups">Pickup / Double Cab</option>
+                            <option value="buses">Bus</option>
+                            <option value="lorries">Lorry</option>
+                            <option value="three-wheels">Three Wheel</option>
+                            <option value="tractors">Tractor</option>
+                            <option value="heavy-duties">Heavy-Duty</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Vehicle Condition</label>
+                        <select name="vcat" id="vcat">
+                            <option value="">Any Condition</option>
+                            <option value="antique">Antique</option>
+                            <option value="brand-new">Brand New</option>
+                            <option value="registered">Registered (Used)</option>
+                            <option value="unregistered">Unregistered (Recondition)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>City / District</label>
+                        <select name="city" id="city">
+                            <option value="">Any City</option>
+                            <optgroup label="Colombo District">
+                                <option value="Colombo">Colombo</option>
+                                <option value="Dehiwala-Mount-Lavinia">Dehiwala-Mount-Lavinia</option>
+                                <option value="Moratuwa">Moratuwa</option>
+                                <option value="Kotte">Kotte</option>
+                                <option value="Battaramulla">Battaramulla</option>
+                                <option value="Maharagama">Maharagama</option>
+                                <option value="Nugegoda">Nugegoda</option>
+                                <option value="Malabe">Malabe</option>
+                                <option value="Kaduwela">Kaduwela</option>
+                            </optgroup>
+                            <optgroup label="Gampaha District">
+                                <option value="Gampaha">Gampaha</option>
+                                <option value="Negombo">Negombo</option>
+                                <option value="Katunayake">Katunayake</option>
+                                <option value="Ja-Ela">Ja-Ela</option>
+                                <option value="Wattala">Wattala</option>
+                                <option value="Ragama">Ragama</option>
+                            </optgroup>
+                            <optgroup label="Kandy District">
+                                <option value="Kandy">Kandy</option>
+                                <option value="Gampola">Gampola</option>
+                            </optgroup>
+                            <optgroup label="Galle District">
+                                <option value="Galle">Galle</option>
+                                <option value="Hikkaduwa">Hikkaduwa</option>
+                                <option value="Bentota">Bentota</option>
+                            </optgroup>
+                            <optgroup label="Other Districts">
+                                <option value="Kurunegala">Kurunegala</option>
+                                <option value="Ratnapura">Ratnapura</option>
+                                <option value="Kalutara">Kalutara</option>
+                                <option value="Puttalam">Puttalam</option>
+                                <option value="Jaffna">Jaffna</option>
+                                <option value="Anuradapura">Anuradapura</option>
+                                <option value="Polonnaruwa">Polonnaruwa</option>
+                                <option value="Badulla">Badulla</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Fuel Type</label>
+                        <select name="fuel" id="fuel">
+                            <option value="">Any Fuel</option>
+                            <option value="petrol">Petrol</option>
+                            <option value="diesel">Diesel</option>
+                            <option value="electric">Electric</option>
+                            <option value="hybrid">Hybrid</option>
+                            <option value="gas">Gas</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Transmission</label>
+                        <select name="trans" id="trans">
+                            <option value="">Any Gear</option>
+                            <option value="Automatic">Automatic</option>
+                            <option value="Manual">Manual</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label>Year From</label>
+                            <select name="year_min" id="year_min"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Year To</label>
+                            <select name="year_max" id="year_max"></select>
+                        </div>
+                    </div>
+
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label>Min Price (Rs.)</label>
+                            <input type="number" name="price_min" id="price_min" placeholder="e.g. 1000000">
+                        </div>
+                        <div class="form-group">
+                            <label>Max Price (Rs.)</label>
+                            <input type="number" name="price_max" id="price_max" placeholder="e.g. 5000000">
+                        </div>
+                    </div>
+
+                </div>
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    <span>🔍</span> Scrape &amp; Analyze
+                </button>
+            </form>
+        </div>
+
+        <!-- ── Loading / real-time steps ──────────────────────── -->
+        <div id="loadingSection">
+            <div class="spinner-ring"></div>
+            <div class="loading-title">Working on it…</div>
+            <div class="steps">
+                <div class="step" id="step-navigating">
+                    <span class="step-icon">🌐</span>
+                    <div class="step-content">
+                        <div class="step-label">Opening browser</div>
+                        <div class="step-detail" id="detail-navigating">Waiting to start…</div>
+                    </div>
+                </div>
+                <div class="step" id="step-filtering">
+                    <span class="step-icon">🔧</span>
+                    <div class="step-content">
+                        <div class="step-label">Filling search filters</div>
+                        <div class="step-detail" id="detail-filtering">—</div>
+                    </div>
+                </div>
+                <div class="step" id="step-scraping">
+                    <span class="step-icon">📄</span>
+                    <div class="step-content">
+                        <div class="step-label">Collecting listings</div>
+                        <div class="step-detail" id="detail-scraping">—</div>
+                    </div>
+                </div>
+                <div class="step" id="step-analyzing">
+                    <span class="step-icon">📊</span>
+                    <div class="step-content">
+                        <div class="step-label">Analyzing price data</div>
+                        <div class="step-detail" id="detail-analyzing">—</div>
+                    </div>
+                </div>
+            </div>
+            <p style="font-size:.78rem;color:var(--muted);margin-top:8px">This may take several minutes depending on
+                result pages.</p>
+        </div>
+
+        <!-- ── Results ──────────────────────────────────────── -->
+        <div id="resultsSection">
+            <div class="result-banner">
+                <div>
+                    <div class="result-headline-sub">Analysis Complete</div>
+                    <div class="result-headline" id="resultHeadline"></div>
+                </div>
+                <div class="result-actions">
+                    <button class="btn-download" onclick="downloadExcel()" id="downloadBtn">📥 Download Excel Report</button>
+                    <button class="btn-ghost" onclick="resetForm()">🔄 New Search</button>
+                </div>
+            </div>
+
+            <div class="stats-grid" id="statsGrid"></div>
+
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-label">Average Price by Year (Rs.)</div><canvas id="chartAvg"></canvas>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-label">Number of Listings by Year</div><canvas id="chartCount"></canvas>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-label">Price Range — Min / Avg / Max</div><canvas id="chartRange"></canvas>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-label">Price Distribution</div><canvas id="chartBuckets"></canvas>
+                </div>
+            </div>
+
+            <div class="card" style="margin-bottom:0">
+                <div class="card-header">
+                    <div class="card-title">📋 Yearly Price Breakdown</div>
+                </div>
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Year</th>
+                                <th class="num">Listings</th>
+                                <th class="num">Avg Price</th>
+                                <th class="num">Median Price</th>
+                                <th class="num">Min Price</th>
+                                <th class="num">Max Price</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /main -->
+
+    <script>
+        /* ════════════════════════════════════════════════
+           Helpers
+        ════════════════════════════════════════════════ */
+        const fmtRs = v => (v == null || isNaN(v)) ? '—' : 'Rs.\u202f' + Number(v).toLocaleString('en-LK', { maximumFractionDigits: 0 });
+        const fmtM = v => (v == null || isNaN(v)) ? '—' : 'Rs.' + (v / 1_000_000).toFixed(2) + 'M';
+
+        // Year dropdowns
+        (function () {
+            const html = ['<option value="">Any Year</option>'];
+            for (let y = 2026; y >= 2000; y--) html.push(`<option value="${y}">${y}</option>`);
+            document.getElementById('year_min').innerHTML = html.join('');
+            document.getElementById('year_max').innerHTML = html.join('');
+        })();
+
+        /* ════════════════════════════════════════════════
+           Step management (driven by SSE events)
+        ════════════════════════════════════════════════ */
+        // Ordered list of steps
+        const STEP_ORDER = ['navigating', 'filtering', 'scraping', 'analyzing'];
+
+        function setStep(activeStep, detail) {
+            const idx = STEP_ORDER.indexOf(activeStep);
+
+            STEP_ORDER.forEach((s, i) => {
+                const el = document.getElementById('step-' + s);
+                if (i < idx) {
+                    el.className = 'step done';
+                } else if (i === idx) {
+                    el.className = 'step active';
+                } else {
+                    el.className = 'step';
+                }
+            });
+
+            if (detail) {
+                const detailEl = document.getElementById('detail-' + activeStep);
+                if (detailEl) detailEl.textContent = detail;
+            }
+        }
+
+        function markAllDone() {
+            STEP_ORDER.forEach(s => {
+                document.getElementById('step-' + s).className = 'step done';
+            });
+        }
+
+        function resetSteps() {
+            STEP_ORDER.forEach(s => {
+                document.getElementById('step-' + s).className = 'step';
+                const d = document.getElementById('detail-' + s);
+                if (d) d.textContent = '—';
+            });
+            document.getElementById('detail-navigating').textContent = 'Waiting to start…';
+        }
+
+        /* ════════════════════════════════════════════════
+           SSE message handler
+        ════════════════════════════════════════════════ */
+        function handleEvent(msg) {
+            const { step, message, page, collected } = msg;
+
+            switch (step) {
+                case 'navigating':
+                    setStep('navigating', message);
+                    break;
+
+                case 'filtering':
+                    setStep('filtering', message);
+                    // mark navigating done
+                    document.getElementById('step-navigating').className = 'step done';
+                    break;
+
+                case 'scraping': {
+                    document.getElementById('step-navigating').className = 'step done';
+                    document.getElementById('step-filtering').className = 'step done';
+                    const detail = page != null
+                        ? `Page ${page}${collected != null ? ' — ' + collected + ' cars so far' : ''}`
+                        : (message || '');
+                    setStep('scraping', detail);
+                    break;
+                }
+
+                case 'analyzing':
+                    document.getElementById('step-navigating').className = 'step done';
+                    document.getElementById('step-filtering').className = 'step done';
+                    document.getElementById('step-scraping').className = 'step done';
+                    setStep('analyzing', message);
+                    break;
+
+                case 'done':
+                    markAllDone();
+                    break;
+
+                case 'error':
+                    break; // handled in submit handler
+            }
+        }
+
+        /* ════════════════════════════════════════════════
+           Form submit — SSE streaming fetch
+        ════════════════════════════════════════════════ */
+        let currentSessionId = null;
+        let charts = {};
+
+        document.getElementById('scraperForm').addEventListener('submit', async e => {
+            e.preventDefault();
+
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            Object.keys(data).forEach(k => { if (!data[k]) delete data[k]; });
+
+            // Reset UI
+            hideError();
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('resultsSection').classList.remove('show');
+            document.getElementById('submitBtn').disabled = true;
+            resetSteps();
+            document.getElementById('loadingSection').classList.add('show');
+            destroyCharts();
+            currentSessionId = null;
+
+            try {
+                const response = await fetch('/api/scrape', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                let finalResult = null;
+                let errorMsg = null;
+
+                // Read SSE stream
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop(); // keep incomplete tail
+
+                    for (const line of lines) {
+                        if (!line.startsWith('data: ')) continue;
+                        const raw = line.slice(6).trim();
+                        if (!raw) continue;
+
+                        let msg;
+                        try { msg = JSON.parse(raw); } catch { continue; }
+
+                        handleEvent(msg);
+
+                        if (msg.step === 'done') {
+                            finalResult = msg;
+                        } else if (msg.step === 'error') {
+                            errorMsg = msg.message;
+                        }
+                    }
+                }
+
+                if (errorMsg) {
+                    showError(errorMsg);
+                } else if (finalResult) {
+                    currentSessionId = finalResult.session_id;
+                    renderResults(finalResult);
+                } else {
+                    showError('No result received from server.');
+                }
+
+            } catch (err) {
+                showError('Cannot reach the server. Make sure Flask is running. (' + err.message + ')');
+            } finally {
+                document.getElementById('loadingSection').classList.remove('show');
+                document.getElementById('submitBtn').disabled = false;
+            }
+        });
+
+        /* ════════════════════════════════════════════════
+           Render results
+        ════════════════════════════════════════════════ */
+        function renderResults(result) {
+            const a = result.analysis;
+            const s = a.summary;
+            const yearly = a.yearly_stats;
+            const buckets = a.price_buckets;
+
+            document.getElementById('resultHeadline').textContent = `${result.total_cars.toLocaleString()} listings analysed`;
+
+            document.getElementById('statsGrid').innerHTML = [
+                ['Total Listings', result.total_cars.toLocaleString()],
+                ['Year Range', `${s.year_min} – ${s.year_max}`],
+                ['Average Price', fmtRs(s.overall_avg_price)],
+                ['Median Price', fmtRs(s.overall_median_price)],
+                ['Lowest Price', fmtRs(s.overall_min_price)],
+                ['Highest Price', fmtRs(s.overall_max_price)],
+            ].map(([l, v]) => `<div class="stat-card"><div class="stat-label">${l}</div><div class="stat-value">${v}</div></div>`).join('');
+
+            buildCharts(yearly, buckets);
+
+            document.getElementById('tableBody').innerHTML = [...yearly].reverse().map(r => `
+        <tr>
+            <td class="year-cell">${r.year}</td>
+            <td class="num">${Number(r.count).toLocaleString()}</td>
+            <td class="num">${fmtRs(r.avg_price)}</td>
+            <td class="num">${fmtRs(r.median_price)}</td>
+            <td class="num">${fmtRs(r.min_price)}</td>
+            <td class="num">${fmtRs(r.max_price)}</td>
+        </tr>
+    `).join('');
+
+            document.getElementById('resultsSection').style.display = 'block';
+            document.getElementById('resultsSection').classList.add('show');
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        /* ════════════════════════════════════════════════
+           Charts
+        ════════════════════════════════════════════════ */
+        const TC = '#8b949e', GC = 'rgba(48,54,61,0.9)';
+        const baseScales = {
+            x: { ticks: { color: TC, font: { size: 10 } }, grid: { color: GC } },
+            y: { ticks: { color: TC, font: { size: 10 } }, grid: { color: GC } },
+        };
+        const baseOpts = { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: TC, font: { family: 'Inter', size: 11 } } } } };
+        const priceScale = { ...baseScales, y: { ...baseScales.y, ticks: { ...baseScales.y.ticks, callback: v => fmtM(v) } } };
+
+        function destroyCharts() {
+            Object.values(charts).forEach(c => c.destroy());
+            charts = {};
+        }
+
+        function buildCharts(yearly, buckets) {
+            const years = yearly.map(r => r.year);
+            const avgs = yearly.map(r => r.avg_price);
+            const counts = yearly.map(r => r.count);
+            const mins = yearly.map(r => r.min_price);
+            const maxs = yearly.map(r => r.max_price);
+
+            charts.avg = new Chart(document.getElementById('chartAvg'), {
+                type: 'line',
+                data: { labels: years, datasets: [{ label: 'Avg Price', data: avgs, borderColor: '#7c5cfc', backgroundColor: 'rgba(124,92,252,.1)', fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: '#7c5cfc', pointHoverRadius: 6 }] },
+                options: { ...baseOpts, scales: priceScale }
+            });
+
+            charts.count = new Chart(document.getElementById('chartCount'), {
+                type: 'bar',
+                data: { labels: years, datasets: [{ label: 'Listings', data: counts, backgroundColor: 'rgba(167,139,250,.65)', borderColor: '#a78bfa', borderWidth: 1, borderRadius: 4, hoverBackgroundColor: 'rgba(167,139,250,.9)' }] },
+                options: { ...baseOpts, scales: baseScales }
+            });
+
+            charts.range = new Chart(document.getElementById('chartRange'), {
+                type: 'line',
+                data: {
+                    labels: years,
+                    datasets: [
+                        { label: 'Max', data: maxs, borderColor: '#f85149', borderDash: [5, 3], backgroundColor: 'transparent', pointRadius: 2, tension: 0.35 },
+                        { label: 'Avg', data: avgs, borderColor: '#7c5cfc', backgroundColor: 'transparent', pointRadius: 3, tension: 0.35, borderWidth: 2 },
+                        { label: 'Min', data: mins, borderColor: '#3fb950', borderDash: [5, 3], backgroundColor: 'transparent', pointRadius: 2, tension: 0.35 },
+                    ]
+                },
+                options: { ...baseOpts, scales: priceScale }
+            });
+
+            charts.buckets = new Chart(document.getElementById('chartBuckets'), {
+                type: 'doughnut',
+                data: {
+                    labels: buckets.map(b => b.label),
+                    datasets: [{ data: buckets.map(b => b.count), backgroundColor: ['#7c5cfc', '#a78bfa', '#3fb950', '#d29922', '#f85149', '#58a6ff', '#79c0ff'], borderColor: '#21262d', borderWidth: 2, hoverOffset: 6 }]
+                },
+                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'right', labels: { color: TC, font: { family: 'Inter', size: 11 }, padding: 10 } } } }
+            });
+        }
+
+        /* ════════════════════════════════════════════════
+           Download & Reset
+        ════════════════════════════════════════════════ */
+        function downloadExcel() {
+            if (!currentSessionId) return;
+            window.location.href = `/api/download/${encodeURIComponent(currentSessionId)}`;
+        }
+
+        function resetForm() {
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('resultsSection').classList.remove('show');
+            hideError();
+            destroyCharts();
+            currentSessionId = null;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function showError(msg) {
+            document.getElementById('alertMsg').textContent = msg;
+            document.getElementById('alertBox').classList.add('show');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function hideError() {
+            document.getElementById('alertBox').classList.remove('show');
+        }
+    </script>
+</body>
+
+</html>
